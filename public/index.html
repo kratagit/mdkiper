@@ -48,15 +48,16 @@
                 <!-- Left pane: Editor -->
                 <div class="pane editor-pane">
                     <div class="pane-header">
-                        <span>Markdown</span>
+                        <span class="pane-header-title">Markdown</span>
                         <span id="saveStatus" class="save-status"></span>
                     </div>
                     <textarea id="noteEditor" class="editor" placeholder="Type content in Markdown format. Changes are saved automatically." disabled></textarea>
                 </div>
                 
-                <!-- Right pane: Preview -->
                 <div class="pane preview-pane">
-                    <div class="pane-header">Live Preview</div>
+                    <div class="pane-header">
+                        <span class="pane-header-title">Live Preview</span>
+                    </div>
                     <div class="preview-scroll">
                         <div id="notePreview" class="preview markdown-body">
                             <div class="empty-state">

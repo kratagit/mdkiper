@@ -82,11 +82,13 @@ function showAlert(message) {
 hideSidebarBtn.addEventListener('click', () => {
     sidebar.classList.add('collapsed');
     showSidebarBtn.classList.remove('hidden');
+    contentArea.classList.add('sidebar-collapsed');
 });
 
 showSidebarBtn.addEventListener('click', () => {
     sidebar.classList.remove('collapsed');
     showSidebarBtn.classList.add('hidden');
+    contentArea.classList.remove('sidebar-collapsed');
 });
 
 // Context menu
