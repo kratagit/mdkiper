@@ -305,14 +305,33 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     min-height: 0; /* CRUCIAL: Prevents vertical overflow */
     min-width: 0; /* CRUCIAL: Prevents horizontal overflow */
     display: flex;
-    padding: 16px;
-    gap: 16px;
+    padding: 8px;
+    gap: 8px;
     background: #0a0a0a;
+}
+
+.global-empty-state {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+}
+
+.content-area.empty-mode .global-empty-state {
+    display: flex;
+}
+
+.content-area.empty-mode .pane {
+    display: none !important;
 }
 
 .pane {
     flex: 1 1 50%;
-    max-width: calc(50% - 8px);
+    max-width: calc(50% - 4px);
     display: flex;
     flex-direction: column;
     background: var(--sidebar-bg);

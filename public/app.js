@@ -7,6 +7,7 @@ const saveStatus = document.getElementById('saveStatus');
 const sidebar = document.getElementById('sidebar');
 const hideSidebarBtn = document.getElementById('hideSidebarBtn');
 const showSidebarBtn = document.getElementById('showSidebarBtn');
+const contentArea = document.getElementById('contentArea');
 
 let currentNote = null;
 let saveTimeout = null;
@@ -222,6 +223,7 @@ async function selectNote(name, updateUrl = true) {
         renderMarkdown(data.content);
         updateListSelection();
         
+        contentArea.classList.remove('empty-mode');
         noteEditor.disabled = false;
         saveStatus.textContent = '';
     } catch (err) {
@@ -370,11 +372,21 @@ async function handleRouting() {
         if (notes.includes(noteName)) {
             selectNote(noteName, false); // false to prevent double pushState
         } else {
-            createNewNote(false);
+            showEmptyState();
         }
     } else {
-        createNewNote(false);
+        showEmptyState();
     }
+}
+
+function showEmptyState() {
+    currentNote = null;
+    contentArea.classList.add('empty-mode');
+    noteEditor.value = '';
+    notePreview.innerHTML = `<div class="empty-state"><p>Select a note from the list or create a new one.</p></div>`;
+    noteEditor.disabled = true;
+    saveStatus.textContent = '';
+    updateListSelection();
 }
 
 // Note search engine
