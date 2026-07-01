@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   mdkiper:
     image: ghcr.io/kratagit/mdkiper:latest
@@ -8,6 +6,4 @@ services:
     ports:
       - "3005:3005"
     volumes:
-      # Mapowanie lokalnego katalogu na katalog w kontenerze,
-      # co zapewnia zachowanie notatek przy aktualizacjach WUD
       - ./data:/app/data
