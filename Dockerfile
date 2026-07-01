@@ -16,4 +16,4 @@ COPY . .
 EXPOSE 3005
 
 # Uruchomienie aplikacji
-CMD ["node", "server.js"]
+CMD ["npm", "start"]
