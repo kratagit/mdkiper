@@ -302,8 +302,8 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 
 .content-area {
     flex: 1;
-    min-height: 0; /* CRUCIAL: Prevents vertical overflow */
-    min-width: 0; /* CRUCIAL: Prevents horizontal overflow */
+    min-height: 0;
+    min-width: 0;
     display: flex;
     padding: 8px;
     gap: 8px;
