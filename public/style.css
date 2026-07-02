@@ -24,16 +24,26 @@ body {
     font-size: 13px; /* Reduce fonts */
 }
 
+body.preload * {
+    transition: none !important;
+}
+
+
 .app-container {
     display: flex;
     width: 100vw;
     height: 100vh;
 }
 
-::-webkit-scrollbar { width: 6px; height: 6px; }
+* {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.15) transparent;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #444444; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.15); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
 
 h1, h2, h3, h4, h5, h6 { font-weight: 500; }
 
@@ -72,7 +82,7 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 }
 
 .sidebar-top {
-    padding: 10px 12px;
+    padding: 0 12px 10px 12px;
     display: flex;
     flex-direction: column;
     gap: 8px;
@@ -82,6 +92,7 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     display: flex;
     justify-content: space-between;
     align-items: center;
+    height: 40px;
     padding: 0 4px;
 }
 
@@ -90,6 +101,9 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     font-weight: 600;
     color: var(--text-primary);
     margin: 0;
+    line-height: 1;
+    display: flex;
+    align-items: center;
 }
 
 .icon-btn {
@@ -108,6 +122,14 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 .icon-btn:hover {
     background: var(--hover-bg);
     color: var(--text-primary);
+}
+
+.gear-btn svg {
+    transition: transform 0.4s ease;
+}
+
+.gear-btn:hover svg {
+    transform: rotate(90deg);
 }
 
 .primary-btn {
@@ -250,6 +272,51 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     display: none;
 }
 
+.dropdown-item svg {
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+/* Custom Toggle Switch */
+.toggle-switch {
+    position: relative;
+    display: inline-block;
+    width: 38px;
+    height: 20px;
+    flex-shrink: 0;
+}
+.toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+.toggle-slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--border-color);
+    transition: .3s;
+    border-radius: 20px;
+}
+.toggle-slider:before {
+    position: absolute;
+    content: "";
+    height: 14px;
+    width: 14px;
+    left: 3px;
+    bottom: 3px;
+    background-color: var(--text-secondary);
+    transition: .3s;
+    border-radius: 50%;
+}
+.toggle-switch input:checked + .toggle-slider {
+    background-color: var(--text-primary);
+}
+.toggle-switch input:checked + .toggle-slider:before {
+    transform: translateX(18px);
+    background-color: var(--bg-color);
+}
+
 .dropdown-item {
     padding: 8px 12px;
     cursor: pointer;
@@ -285,39 +352,32 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 
 .floating-btn {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 44px;
-    height: 40px;
-    background: var(--bg-color);
-    border-right: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    border-bottom-right-radius: 8px;
+    top: 8px;
+    left: 10px;
     z-index: 100;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    color: var(--text-secondary);
-    border-top: none;
-    border-left: none;
-    transition: color 0.2s;
-}
-
-.floating-btn:hover {
-    color: var(--text-primary);
-    background: var(--bg-color);
 }
 
 .floating-btn.hidden {
     display: none;
 }
 
+.pane-actions {
+    position: absolute;
+    right: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
 .save-status {
     font-size: 0.75rem;
     color: var(--text-secondary);
-    position: absolute;
-    right: 16px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.save-status.fade-out {
+    opacity: 0;
 }
 
 .content-area {
@@ -351,7 +411,7 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 
 .pane {
     flex: 1 1 50%;
-    max-width: 50%;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     background: var(--sidebar-bg);
@@ -360,6 +420,16 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     border-radius: 0;
     min-height: 0;
     min-width: 0; /* Crucial for flexbox */
+    overflow: hidden;
+    transition: flex 0.4s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, border-color 0.4s ease;
+}
+
+.pane.hidden {
+    flex: 0 0 0%;
+    max-width: 0px;
+    opacity: 0;
+    border-right-color: transparent;
+    pointer-events: none;
 }
 
 .pane:last-child {
@@ -381,6 +451,8 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 .pane-header-title {
     position: absolute;
     left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 0.8rem;
     font-weight: 600;
     color: var(--text-secondary);
@@ -389,7 +461,7 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 
 .content-area.sidebar-collapsed .pane-header-title {
     left: 50%;
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
 }
 
 .editor {
@@ -450,6 +522,11 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 .markdown-body blockquote { border-left: 3px solid var(--border-color); color: var(--text-secondary); padding: 0 1em; }
 .markdown-body ul, .markdown-body ol { padding-left: 2em; }
 .markdown-body img { max-width: 100%; box-sizing: content-box; }
+.markdown-body table { border-spacing: 0; border-collapse: collapse; width: 100%; margin-top: 0; margin-bottom: 12px; }
+.markdown-body table th { font-weight: 600; text-align: left; background-color: rgba(255, 255, 255, 0.05); }
+.markdown-body table th, .markdown-body table td { padding: 6px 13px; border: 1px solid var(--border-color); }
+.markdown-body table tr { background-color: transparent; }
+.markdown-body table tr:nth-child(2n) { background-color: rgba(255, 255, 255, 0.02); }
 
 /* Modals - custom dialog boxes */
 .modal-overlay {
@@ -476,7 +553,7 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     border-radius: 8px;
     padding: 24px;
     width: 100%;
-    max-width: 400px;
+    max-width: 480px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.5);
     display: flex;
     flex-direction: column;

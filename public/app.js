@@ -9,8 +9,117 @@ const hideSidebarBtn = document.getElementById('hideSidebarBtn');
 const showSidebarBtn = document.getElementById('showSidebarBtn');
 const contentArea = document.getElementById('contentArea');
 
+const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+const toggleEditorBtn = document.getElementById('toggleEditorBtn');
+const editorPane = document.querySelector('.editor-pane');
+const previewPane = document.querySelector('.preview-pane');
+
+// Prevent empty state flash by checking URL synchronously
+if (window.location.pathname.endsWith('.md')) {
+    contentArea.classList.remove('empty-mode');
+}
+// Restore layout state
+if (localStorage.getItem('isSidebarCollapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+    if (showSidebarBtn) showSidebarBtn.classList.remove('hidden');
+    contentArea.classList.add('sidebar-collapsed');
+}
+
+if (localStorage.getItem('isPreviewHidden') === 'true' && previewPane && togglePreviewBtn) {
+    previewPane.classList.add('hidden');
+    togglePreviewBtn.title = "Show Preview";
+    togglePreviewBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line><path d="m14 9-3 3 3 3"></path></svg>';
+}
+
+if (localStorage.getItem('isEditorHidden') === 'true' && editorPane && toggleEditorBtn) {
+    editorPane.classList.add('hidden');
+    toggleEditorBtn.title = "Show Editor";
+    toggleEditorBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><path d="m10 9 3 3-3 3"></path></svg>';
+}
+
+// Remove preload class to enable transitions again
+setTimeout(() => {
+    document.body.classList.remove('preload');
+}, 50);
+
 let currentNote = null;
 let saveTimeout = null;
+let clearStatusTimeout = null;
+let statusTransitionTimeout = null;
+
+const syncChannel = new BroadcastChannel('mdkiper_sync');
+
+syncChannel.onmessage = async (event) => {
+    if (event.data.type === 'SYNC_NOTES') {
+        await loadNotes();
+        if (currentNote) {
+            const existingNotes = Array.from(notesList.querySelectorAll('li span')).map(span => span.textContent);
+            if (!existingNotes.includes(currentNote)) {
+                showEmptyState();
+            } else {
+                try {
+                    const response = await fetch(`/api/notes/${currentNote}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (noteEditor.value !== data.content) {
+                            const start = noteEditor.selectionStart;
+                            const end = noteEditor.selectionEnd;
+                            
+                            noteEditor.value = data.content;
+                            renderMarkdown(data.content);
+                            
+                            if (document.activeElement === noteEditor) {
+                                noteEditor.setSelectionRange(start, end);
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error syncing note', e);
+                }
+            }
+        }
+    }
+};
+
+function broadcastSync() {
+    syncChannel.postMessage({ type: 'SYNC_NOTES' });
+}
+
+function updateSaveStatus(text, color = '', autoClear = false) {
+    clearTimeout(clearStatusTimeout);
+
+    if (saveStatus.textContent === text && !saveStatus.classList.contains('fade-out')) {
+        saveStatus.style.color = color;
+        if (autoClear) {
+            clearStatusTimeout = setTimeout(() => {
+                if (saveStatus.textContent === text) {
+                    saveStatus.classList.add('fade-out');
+                }
+            }, 5000);
+        }
+        return;
+    }
+    
+    saveStatus.classList.add('fade-out');
+    clearTimeout(statusTransitionTimeout);
+    
+    statusTransitionTimeout = setTimeout(() => {
+        saveStatus.textContent = text;
+        saveStatus.style.color = color;
+        
+        if (text !== '') {
+            saveStatus.classList.remove('fade-out');
+        }
+        
+        if (autoClear) {
+            clearStatusTimeout = setTimeout(() => {
+                if (saveStatus.textContent === text) {
+                    saveStatus.classList.add('fade-out');
+                }
+            }, 5000);
+        }
+    }, 200);
+}
 
 // Custom dialogs (replace prompt, confirm and alert)
 function showModal({ title, message, type = 'confirm', inputPlaceholder = '', initialValue = '', confirmText = 'OK', cancelText = 'Cancel', danger = false, hideCancel = false }) {
@@ -49,11 +158,19 @@ function showModal({ title, message, type = 'confirm', inputPlaceholder = '', in
             mInput.select();
         }
         
+        const outsideClickListener = (e) => {
+            if (e.target === overlay) {
+                cancelBtn.click();
+            }
+        };
+        overlay.addEventListener('click', outsideClickListener);
+        
         const cleanup = () => {
             overlay.classList.add('hidden');
             cancelBtn.onclick = null;
             confirmBtn.onclick = null;
             mInput.onkeydown = null;
+            overlay.removeEventListener('click', outsideClickListener);
         };
         
         cancelBtn.onclick = () => {
@@ -83,12 +200,14 @@ hideSidebarBtn.addEventListener('click', () => {
     sidebar.classList.add('collapsed');
     showSidebarBtn.classList.remove('hidden');
     contentArea.classList.add('sidebar-collapsed');
+    localStorage.setItem('isSidebarCollapsed', 'true');
 });
 
 showSidebarBtn.addEventListener('click', () => {
     sidebar.classList.remove('collapsed');
     showSidebarBtn.classList.add('hidden');
     contentArea.classList.remove('sidebar-collapsed');
+    localStorage.setItem('isSidebarCollapsed', 'false');
 });
 
 // Context menu
@@ -148,6 +267,7 @@ ctxRename.addEventListener('click', async (e) => {
             window.history.replaceState({}, '', `/${encodeURIComponent(safeName)}.md`);
         }
         await loadNotes();
+        broadcastSync();
     } catch (err) {
         console.error(err);
         await showAlert('Error while renaming the note!');
@@ -227,10 +347,11 @@ async function selectNote(name, updateUrl = true) {
         
         contentArea.classList.remove('empty-mode');
         noteEditor.disabled = false;
-        saveStatus.textContent = '';
+        updateSaveStatus('');
+        noteEditor.focus();
     } catch (err) {
         console.error(err);
-        saveStatus.textContent = 'Load error!';
+        updateSaveStatus('Load error!', 'var(--danger-color)');
     }
 }
 
@@ -271,6 +392,7 @@ async function createNewNote() {
         
         await loadNotes();
         selectNote(safeTitle, true);
+        broadcastSync();
     } catch (err) {
         await showAlert('Error creating note!');
     }
@@ -281,8 +403,7 @@ async function saveNote() {
     if (!currentNote) return;
     
     const content = noteEditor.value;
-    saveStatus.textContent = 'Saving...';
-    saveStatus.style.color = '';
+    updateSaveStatus('Saving...');
 
     try {
         const response = await fetch('/api/notes', {
@@ -293,19 +414,18 @@ async function saveNote() {
         
         if (!response.ok) throw new Error('Save error');
         
-        saveStatus.textContent = 'Saved';
+        updateSaveStatus('Saved', '', true);
+        broadcastSync();
     } catch (err) {
         console.error(err);
-        saveStatus.textContent = 'Save error!';
-        saveStatus.style.color = 'var(--danger-color)';
+        updateSaveStatus('Save error!', 'var(--danger-color)');
     }
 }
 
 // Autosave
 function handleInput() {
     renderMarkdown(noteEditor.value);
-    saveStatus.style.color = '';
-    saveStatus.textContent = 'Editing...';
+    updateSaveStatus('Editing...');
     
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
@@ -333,13 +453,14 @@ async function deleteNoteByName(name) {
             clearTimeout(saveTimeout);
             currentNote = null;
             noteEditor.value = '';
-            notePreview.innerHTML = `<div class="empty-state"><p>Select a note from the list or create a new one.</p></div>`;
-            window.history.pushState({}, '', '/');
             noteEditor.disabled = true;
-            saveStatus.textContent = '';
+            renderMarkdown('');
+            updateSaveStatus('');
+            contentArea.classList.add('empty-mode');
         }
         
         await loadNotes();
+        broadcastSync();
     } catch (err) {
         console.error(err);
         await showAlert('Error deleting note!');
@@ -360,6 +481,36 @@ function updateListSelection() {
 
 newNoteBtn.addEventListener('click', createNewNote);
 noteEditor.addEventListener('input', handleInput);
+
+if (togglePreviewBtn) {
+    togglePreviewBtn.addEventListener('click', () => {
+        previewPane.classList.toggle('hidden');
+        if (previewPane.classList.contains('hidden')) {
+            togglePreviewBtn.title = "Show Preview";
+            togglePreviewBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line><path d="m14 9-3 3 3 3"></path></svg>';
+            localStorage.setItem('isPreviewHidden', 'true');
+        } else {
+            togglePreviewBtn.title = "Hide Preview";
+            togglePreviewBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line><path d="m10 15 3-3-3-3"></path></svg>';
+            localStorage.setItem('isPreviewHidden', 'false');
+        }
+    });
+}
+
+if (toggleEditorBtn) {
+    toggleEditorBtn.addEventListener('click', () => {
+        editorPane.classList.toggle('hidden');
+        if (editorPane.classList.contains('hidden')) {
+            toggleEditorBtn.title = "Show Editor";
+            toggleEditorBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><path d="m10 9 3 3-3 3"></path></svg>';
+            localStorage.setItem('isEditorHidden', 'true');
+        } else {
+            toggleEditorBtn.title = "Hide Editor";
+            toggleEditorBtn.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><path d="m14 15-3-3 3-3"></path></svg>';
+            localStorage.setItem('isEditorHidden', 'false');
+        }
+    });
+}
 
 // Browser back/forward navigation
 window.addEventListener('popstate', handleRouting);
@@ -387,7 +538,7 @@ function showEmptyState() {
     noteEditor.value = '';
     notePreview.innerHTML = `<div class="empty-state"><p>Select a note from the list or create a new one.</p></div>`;
     noteEditor.disabled = true;
-    saveStatus.textContent = '';
+    updateSaveStatus('');
     updateListSelection();
 }
 
@@ -409,3 +560,76 @@ if (searchInput) {
 
 // Start application on refresh
 handleRouting();
+
+// Settings and Sync Scroll
+const settingsBtn = document.getElementById('settingsBtn');
+const settingsModal = document.getElementById('settingsModal');
+const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+const syncScrollCheckbox = document.getElementById('syncScrollCheckbox');
+const previewScroll = document.querySelector('.preview-scroll');
+
+let syncScrollEnabled = localStorage.getItem('syncScrollEnabled') === 'true';
+if (syncScrollCheckbox) syncScrollCheckbox.checked = syncScrollEnabled;
+
+if (settingsBtn) {
+    settingsBtn.addEventListener('click', () => {
+        settingsModal.classList.remove('hidden');
+    });
+}
+
+if (closeSettingsBtn) {
+    closeSettingsBtn.addEventListener('click', () => {
+        settingsModal.classList.add('hidden');
+    });
+}
+
+if (settingsModal) {
+    settingsModal.addEventListener('click', (e) => {
+        if (e.target === settingsModal) {
+            settingsModal.classList.add('hidden');
+        }
+    });
+}
+
+if (syncScrollCheckbox) {
+    syncScrollCheckbox.addEventListener('change', (e) => {
+        syncScrollEnabled = e.target.checked;
+        localStorage.setItem('syncScrollEnabled', syncScrollEnabled);
+    });
+}
+
+let isSyncingLeft = false;
+let isSyncingRight = false;
+
+if (noteEditor && previewScroll) {
+    noteEditor.addEventListener('scroll', () => {
+        if (!syncScrollEnabled) return;
+        if (isSyncingLeft) {
+            isSyncingLeft = false;
+            return;
+        }
+        isSyncingRight = true;
+        
+        // Prevent division by zero
+        const editorScrollable = noteEditor.scrollHeight - noteEditor.clientHeight;
+        if (editorScrollable <= 0) return;
+        
+        const percentage = noteEditor.scrollTop / editorScrollable;
+        previewScroll.scrollTop = percentage * (previewScroll.scrollHeight - previewScroll.clientHeight);
+    });
+
+    previewScroll.addEventListener('scroll', () => {
+        if (!syncScrollEnabled) return;
+        if (isSyncingRight) {
+            isSyncingRight = false;
+            return;
+        }
+        isSyncingLeft = true;
+        
+        const previewScrollable = previewScroll.scrollHeight - previewScroll.clientHeight;
+        if (previewScrollable <= 0) return;
+        
+        const percentage = previewScroll.scrollTop / previewScrollable;
+        noteEditor.scrollTop = percentage * (noteEditor.scrollHeight - noteEditor.clientHeight);
+    });
+}

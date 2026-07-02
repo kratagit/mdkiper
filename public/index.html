@@ -7,9 +7,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
     <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="preload">
     <div class="app-container">
         <!-- Sidebar with notes list -->
         <div class="sidebar" id="sidebar">
@@ -32,6 +33,11 @@
                 </div>
             </div>
             <ul class="notes-list" id="notesList"></ul>
+            <div class="sidebar-footer" style="padding: 10px 12px; border-top: 1px solid var(--border-color); margin-top: auto; display: flex; justify-content: flex-end;">
+                <button id="settingsBtn" class="icon-btn gear-btn" title="Settings">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+            </div>
         </div>
 
         <main class="main-content">
@@ -49,7 +55,12 @@
                 <div class="pane editor-pane">
                     <div class="pane-header">
                         <span class="pane-header-title">Markdown</span>
-                        <span id="saveStatus" class="save-status"></span>
+                        <div class="pane-actions">
+                            <span id="saveStatus" class="save-status"></span>
+                            <button id="togglePreviewBtn" class="icon-btn" title="Toggle Preview">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="15" y1="3" x2="15" y2="21"></line><path d="m10 15 3-3-3-3"></path></svg>
+                            </button>
+                        </div>
                     </div>
                     <textarea id="noteEditor" class="editor" placeholder="Type content in Markdown format. Changes are saved automatically." disabled></textarea>
                 </div>
@@ -57,12 +68,14 @@
                 <div class="pane preview-pane">
                     <div class="pane-header">
                         <span class="pane-header-title">Live Preview</span>
+                        <div class="pane-actions">
+                            <button id="toggleEditorBtn" class="icon-btn" title="Toggle Editor">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line><path d="m14 15-3-3 3-3"></path></svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="preview-scroll">
                         <div id="notePreview" class="preview markdown-body">
-                            <div class="empty-state">
-                                <p>Select a note from the list or create a new one.</p>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -90,6 +103,30 @@
             <div class="modal-actions">
                 <button id="modalCancelBtn" class="modal-btn modal-btn-cancel">Cancel</button>
                 <button id="modalConfirmBtn" class="modal-btn modal-btn-confirm">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h2 class="modal-title" style="margin-bottom: 20px;">Settings</h2>
+            <div class="settings-options" style="margin-bottom: 24px;">
+                <label style="display: flex; align-items: flex-start; gap: 12px; cursor: pointer;">
+                    <div class="toggle-switch" style="margin-top: 2px;">
+                        <input type="checkbox" id="syncScrollCheckbox">
+                        <span class="toggle-slider"></span>
+                    </div>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-size: 0.95rem;">Synchronized Scrolling</span>
+                        <span style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px; line-height: 1.4;">
+                            Automatically scroll the preview when you scroll the editor, and vice versa.
+                        </span>
+                    </div>
+                </label>
+            </div>
+            <div class="modal-actions">
+                <button id="closeSettingsBtn" class="modal-btn modal-btn-confirm">Close</button>
             </div>
         </div>
     </div>
