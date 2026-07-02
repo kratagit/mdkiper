@@ -11,6 +11,44 @@ const contentArea = document.getElementById('contentArea');
 
 let currentNote = null;
 let saveTimeout = null;
+let clearStatusTimeout = null;
+let statusTransitionTimeout = null;
+
+function updateSaveStatus(text, color = '', autoClear = false) {
+    clearTimeout(clearStatusTimeout);
+
+    if (saveStatus.textContent === text && !saveStatus.classList.contains('fade-out')) {
+        saveStatus.style.color = color;
+        if (autoClear) {
+            clearStatusTimeout = setTimeout(() => {
+                if (saveStatus.textContent === text) {
+                    saveStatus.classList.add('fade-out');
+                }
+            }, 5000);
+        }
+        return;
+    }
+    
+    saveStatus.classList.add('fade-out');
+    clearTimeout(statusTransitionTimeout);
+    
+    statusTransitionTimeout = setTimeout(() => {
+        saveStatus.textContent = text;
+        saveStatus.style.color = color;
+        
+        if (text !== '') {
+            saveStatus.classList.remove('fade-out');
+        }
+        
+        if (autoClear) {
+            clearStatusTimeout = setTimeout(() => {
+                if (saveStatus.textContent === text) {
+                    saveStatus.classList.add('fade-out');
+                }
+            }, 5000);
+        }
+    }, 200);
+}
 
 // Custom dialogs (replace prompt, confirm and alert)
 function showModal({ title, message, type = 'confirm', inputPlaceholder = '', initialValue = '', confirmText = 'OK', cancelText = 'Cancel', danger = false, hideCancel = false }) {
@@ -227,10 +265,11 @@ async function selectNote(name, updateUrl = true) {
         
         contentArea.classList.remove('empty-mode');
         noteEditor.disabled = false;
-        saveStatus.textContent = '';
+        updateSaveStatus('');
+        noteEditor.focus();
     } catch (err) {
         console.error(err);
-        saveStatus.textContent = 'Load error!';
+        updateSaveStatus('Load error!', 'var(--danger-color)');
     }
 }
 
@@ -281,8 +320,7 @@ async function saveNote() {
     if (!currentNote) return;
     
     const content = noteEditor.value;
-    saveStatus.textContent = 'Saving...';
-    saveStatus.style.color = '';
+    updateSaveStatus('Saving...');
 
     try {
         const response = await fetch('/api/notes', {
@@ -293,19 +331,17 @@ async function saveNote() {
         
         if (!response.ok) throw new Error('Save error');
         
-        saveStatus.textContent = 'Saved';
+        updateSaveStatus('Saved', '', true);
     } catch (err) {
         console.error(err);
-        saveStatus.textContent = 'Save error!';
-        saveStatus.style.color = 'var(--danger-color)';
+        updateSaveStatus('Save error!', 'var(--danger-color)');
     }
 }
 
 // Autosave
 function handleInput() {
     renderMarkdown(noteEditor.value);
-    saveStatus.style.color = '';
-    saveStatus.textContent = 'Editing...';
+    updateSaveStatus('Editing...');
     
     clearTimeout(saveTimeout);
     saveTimeout = setTimeout(() => {
@@ -333,10 +369,10 @@ async function deleteNoteByName(name) {
             clearTimeout(saveTimeout);
             currentNote = null;
             noteEditor.value = '';
-            notePreview.innerHTML = `<div class="empty-state"><p>Select a note from the list or create a new one.</p></div>`;
-            window.history.pushState({}, '', '/');
             noteEditor.disabled = true;
-            saveStatus.textContent = '';
+            renderMarkdown('');
+            updateSaveStatus('');
+            contentArea.classList.add('empty-mode');
         }
         
         await loadNotes();
@@ -387,7 +423,7 @@ function showEmptyState() {
     noteEditor.value = '';
     notePreview.innerHTML = `<div class="empty-state"><p>Select a note from the list or create a new one.</p></div>`;
     noteEditor.disabled = true;
-    saveStatus.textContent = '';
+    updateSaveStatus('');
     updateListSelection();
 }
 

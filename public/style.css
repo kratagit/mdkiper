@@ -318,6 +318,12 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     color: var(--text-secondary);
     position: absolute;
     right: 16px;
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.save-status.fade-out {
+    opacity: 0;
 }
 
 .content-area {
@@ -450,6 +456,11 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 .markdown-body blockquote { border-left: 3px solid var(--border-color); color: var(--text-secondary); padding: 0 1em; }
 .markdown-body ul, .markdown-body ol { padding-left: 2em; }
 .markdown-body img { max-width: 100%; box-sizing: content-box; }
+.markdown-body table { border-spacing: 0; border-collapse: collapse; width: 100%; margin-top: 0; margin-bottom: 12px; }
+.markdown-body table th { font-weight: 600; text-align: left; background-color: rgba(255, 255, 255, 0.05); }
+.markdown-body table th, .markdown-body table td { padding: 6px 13px; border: 1px solid var(--border-color); }
+.markdown-body table tr { background-color: transparent; }
+.markdown-body table tr:nth-child(2n) { background-color: rgba(255, 255, 255, 0.02); }
 
 /* Modals - custom dialog boxes */
 .modal-overlay {
