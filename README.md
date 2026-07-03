@@ -31,7 +31,7 @@ The easiest way to run the application without installing Node.js dependencies.
 2. Open your terminal in the repository folder.
 3. Run the following command:
    ```bash
-   docker-compose up -d
+   docker compose up -d
    ```
 4. Visit `http://localhost:3005` in your web browser.
 *(Your notes will be saved securely in the `./data` folder on your host machine).*
