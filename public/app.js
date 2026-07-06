@@ -358,6 +358,53 @@ async function selectNote(name, updateUrl = true) {
 // Render markdown
 function renderMarkdown(text) {
     notePreview.innerHTML = marked.parse(text || '*Empty note*');
+    
+    notePreview.querySelectorAll('pre').forEach(pre => {
+        // Extract language from code class (e.g., language-js)
+        const codeElement = pre.querySelector('code');
+        let langName = '';
+        if (codeElement && codeElement.className) {
+            const match = codeElement.className.match(/language-(\w+)/);
+            if (match) langName = match[1];
+        }
+        
+        // Wrapper
+        const wrapper = document.createElement('div');
+        wrapper.className = 'code-block-wrapper';
+        pre.parentNode.insertBefore(wrapper, pre);
+        
+        // Header
+        const header = document.createElement('div');
+        header.className = 'code-block-header';
+        
+        // Language label
+        const langSpan = document.createElement('span');
+        langSpan.className = 'code-language';
+        langSpan.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>' + (langName || 'Code');
+        header.appendChild(langSpan);
+        
+        // Copy button
+        const btn = document.createElement('button');
+        btn.className = 'icon-btn copy-code-btn';
+        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>';
+        btn.title = "Copy code";
+        
+        btn.addEventListener('click', () => {
+            const codeText = pre.querySelector('code')?.innerText || pre.innerText;
+            navigator.clipboard.writeText(codeText).then(() => {
+                const originalHtml = btn.innerHTML;
+                btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+                setTimeout(() => {
+                    btn.innerHTML = originalHtml;
+                }, 2000);
+            });
+        });
+        
+        header.appendChild(langSpan);
+        header.appendChild(btn);
+        wrapper.appendChild(header);
+        wrapper.appendChild(pre);
+    });
 }
 
 // Create a new note with a prompt

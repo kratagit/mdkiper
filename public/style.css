@@ -630,7 +630,241 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     background: var(--danger-color);
     color: #ffffff;
 }
+.pane-header {
+    height: 40px;
+    box-sizing: border-box;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--border-color);
+    background: transparent;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+.pane-header-title {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.content-area.sidebar-collapsed .pane-header-title {
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.editor {
+    flex: 1;
+    width: 100%;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    resize: none;
+    padding: 16px;
+}
+
+.editor:disabled { opacity: 0.3; }
+
+.preview-scroll {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.preview {
+    padding: 16px;
+    max-width: 100%;
+}
+
+.empty-state {
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+/* Markdown styling */
+.markdown-body { 
+    color: var(--text-primary); 
+    line-height: 1.5; 
+    font-size: 0.9rem; 
+    overflow-wrap: break-word; 
+    word-break: break-word;
+    max-width: 100%;
+}
+.markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 16px; margin-bottom: 8px; font-weight: 500; line-height: 1.25; color: #fff; }
+.markdown-body h1 { font-size: 1.5em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2em; }
+.markdown-body h2 { font-size: 1.25em; border-bottom: 1px solid var(--border-color); padding-bottom: 0.2em; }
+.markdown-body h3 { font-size: 1.1em; }
+.markdown-body p, .markdown-body blockquote, .markdown-body ul, .markdown-body ol, .markdown-body pre, .markdown-body table { margin-top: 0; margin-bottom: 12px; }
+.markdown-body a { color: #fff; text-decoration: underline; text-underline-offset: 2px; }
+.markdown-body a:hover { color: #ccc; }
+.markdown-body code { background-color: var(--border-color); border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 85%; padding: 0.1em 0.3em; color: #fff; }
+.markdown-body pre { background-color: var(--sidebar-bg); border: 1px solid var(--border-color); border-radius: 6px; padding: 12px; overflow: auto; }
+.markdown-body pre code { background-color: transparent; padding: 0; border: none; }
+.markdown-body blockquote { border-left: 3px solid var(--border-color); color: var(--text-secondary); padding: 0 1em; }
+.markdown-body ul, .markdown-body ol { padding-left: 2em; }
+.markdown-body img { max-width: 100%; box-sizing: content-box; }
+.markdown-body table { border-spacing: 0; border-collapse: collapse; width: 100%; margin-top: 0; margin-bottom: 12px; }
+.markdown-body table th { font-weight: 600; text-align: left; background-color: rgba(255, 255, 255, 0.05); }
+.markdown-body table th, .markdown-body table td { padding: 6px 13px; border: 1px solid var(--border-color); }
+.markdown-body table tr { background-color: transparent; }
+.markdown-body table tr:nth-child(2n) { background-color: rgba(255, 255, 255, 0.02); }
+
+/* Modals - custom dialog boxes */
+.modal-overlay {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(2px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.modal-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-box {
+    background: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 24px;
+    width: 100%;
+    max-width: 480px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.modal-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-message {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.modal-input {
+    width: 100%;
+    background: var(--bg-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    font-size: 0.95rem;
+    border-radius: 6px;
+    outline: none;
+    transition: all 0.2s;
+    font-family: inherit;
+}
+
+.modal-input:focus {
+    border-color: #777;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.modal-btn {
+    padding: 8px 16px;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+}
+
+.modal-btn-cancel {
+    background: transparent;
+    color: var(--text-secondary);
+}
+
+.modal-btn-cancel:hover {
+    background: var(--hover-bg);
+    color: var(--text-primary);
+}
+
+.modal-btn-confirm {
+    background: #ffffff;
+    color: #000000;
+}
+
+.modal-btn-confirm:hover {
+    background: #e0e0e0;
+}
+
+.modal-btn-danger {
+    background: var(--danger-color);
+    color: #ffffff;
+}
 
 .modal-btn-danger:hover {
     background: #dc2626;
 }
+
+/* Code block wrapper styling */
+.code-block-wrapper {
+    background-color: var(--sidebar-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    margin-bottom: 16px;
+    overflow: hidden;
+}
+
+.code-block-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 2px 10px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.2);
+    min-height: 28px;
+}
+
+.code-block-header .code-language {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    text-transform: capitalize;
+}
+
+.markdown-body .code-block-wrapper pre {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+    padding: 10px 12px;
+    white-space: pre-wrap !important;
+    word-break: break-all; /* Fallback */
+    overflow-wrap: break-word;
+}
+
