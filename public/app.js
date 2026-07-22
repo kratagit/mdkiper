@@ -214,8 +214,8 @@ hideSidebarBtn.addEventListener('click', () => {
 });
 
 showSidebarBtn.addEventListener('click', () => {
-    sidebar.classList.remove('collapsed');
     showSidebarBtn.classList.add('hidden');
+    sidebar.classList.remove('collapsed');
     contentArea.classList.remove('sidebar-collapsed');
     localStorage.setItem('isSidebarCollapsed', 'false');
 });
@@ -610,6 +610,21 @@ function showEmptyState() {
     noteEditor.disabled = true;
     updateSaveStatus('');
     updateListSelection();
+}
+
+// Click on logo/title in sidebar to go to home empty state
+const appTitle = document.querySelector('.sidebar-header-line h1');
+if (appTitle) {
+    appTitle.addEventListener('click', () => {
+        if (currentNote || window.location.pathname !== '/') {
+            if (saveTimeout) {
+                clearTimeout(saveTimeout);
+                saveNote();
+            }
+            window.history.pushState({}, '', '/');
+            showEmptyState();
+        }
+    });
 }
 
 // Note search engine
