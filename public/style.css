@@ -201,6 +201,7 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
 .notes-list {
     list-style: none;
     overflow-y: auto;
+    overflow-x: hidden !important;
     flex-grow: 1;
     padding: 8px;
     min-height: 0;
@@ -736,6 +737,10 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     transition: opacity 0.2s;
 }
 
+#appModalOverlay {
+    z-index: 10000;
+}
+
 .modal-overlay.hidden {
     opacity: 0;
     pointer-events: none;
@@ -868,3 +873,158 @@ button:not(:disabled):hover { background: var(--hover-bg); border-color: #444; }
     overflow-wrap: break-word;
 }
 
+/* Trash Modal styling */
+.trash-list-container {
+    max-height: 300px;
+    overflow-y: auto;
+    overflow-x: hidden !important;
+    margin-bottom: 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trash-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.trash-empty-state {
+    height: 41px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    animation: fadeIn 0.25s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.trash-item {
+    height: 41px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border-color);
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.trash-item:last-child {
+    border-bottom: none;
+}
+
+.trash-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-right: 12px;
+}
+
+.trash-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Animations for removing and restoring items */
+.item-removing {
+    animation: itemRemove 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.item-restoring {
+    animation: itemRestore 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+    pointer-events: none;
+    overflow: hidden;
+}
+
+.trash-list li:only-child.item-removing,
+.notes-list li:only-child.item-removing {
+    animation: itemRemoveSingle 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+.trash-list li:only-child.item-restoring,
+.notes-list li:only-child.item-restoring {
+    animation: itemRestoreSingle 0.25s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+}
+
+@keyframes itemRemove {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+        height: 41px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        border-bottom-width: 1px;
+    }
+    60% {
+        opacity: 0;
+        transform: translateX(-30px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-40px);
+        height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-bottom-width: 0;
+    }
+}
+
+@keyframes itemRestore {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+        height: 41px;
+        padding-top: 10px;
+        padding-bottom: 10px;
+        border-bottom-width: 1px;
+    }
+    60% {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(40px);
+        height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        border-bottom-width: 0;
+    }
+}
+
+@keyframes itemRemoveSingle {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
+}
+
+@keyframes itemRestoreSingle {
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+    100% {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+}

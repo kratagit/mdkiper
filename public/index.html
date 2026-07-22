@@ -33,7 +33,10 @@
                 </div>
             </div>
             <ul class="notes-list" id="notesList"></ul>
-            <div class="sidebar-footer" style="padding: 10px 12px; border-top: 1px solid var(--border-color); margin-top: auto; display: flex; justify-content: flex-end;">
+            <div class="sidebar-footer" style="padding: 10px 12px; border-top: 1px solid var(--border-color); margin-top: auto; display: flex; justify-content: flex-end; gap: 8px;">
+                <button id="trashBtn" class="icon-btn" title="Trash">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                </button>
                 <button id="settingsBtn" class="icon-btn gear-btn" title="Settings">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 </button>
@@ -127,6 +130,25 @@
             </div>
             <div class="modal-actions">
                 <button id="closeSettingsBtn" class="modal-btn modal-btn-confirm">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Trash Modal -->
+    <div id="trashModal" class="modal-overlay hidden">
+        <div class="modal-box trash-modal-box">
+            <div class="trash-modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <h2 class="modal-title">Trash</h2>
+                <button id="emptyTrashBtn" class="modal-btn modal-btn-danger" style="padding: 6px 12px; font-size: 0.8rem; display: none;">Empty Trash</button>
+            </div>
+            <div class="trash-list-container">
+                <ul id="trashList" class="trash-list"></ul>
+                <div id="trashEmptyState" class="trash-empty-state">
+                    Trash is empty
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button id="closeTrashBtn" class="modal-btn modal-btn-confirm">Close</button>
             </div>
         </div>
     </div>

@@ -14,6 +14,13 @@ const toggleEditorBtn = document.getElementById('toggleEditorBtn');
 const editorPane = document.querySelector('.editor-pane');
 const previewPane = document.querySelector('.preview-pane');
 
+const trashBtn = document.getElementById('trashBtn');
+const trashModal = document.getElementById('trashModal');
+const closeTrashBtn = document.getElementById('closeTrashBtn');
+const trashList = document.getElementById('trashList');
+const trashEmptyState = document.getElementById('trashEmptyState');
+const emptyTrashBtn = document.getElementById('emptyTrashBtn');
+
 // Prevent empty state flash by checking URL synchronously
 if (window.location.pathname.endsWith('.md')) {
     contentArea.classList.remove('empty-mode');
@@ -52,6 +59,9 @@ const syncChannel = new BroadcastChannel('mdkiper_sync');
 syncChannel.onmessage = async (event) => {
     if (event.data.type === 'SYNC_NOTES') {
         await loadNotes();
+        if (trashModal && !trashModal.classList.contains('hidden')) {
+            await loadTrash();
+        }
         if (currentNote) {
             const existingNotes = Array.from(notesList.querySelectorAll('li span')).map(span => span.textContent);
             if (!existingNotes.includes(currentNote)) {
@@ -480,20 +490,30 @@ function handleInput() {
     }, 800);
 }
 
-// Delete selected note (icon)
+// Delete selected note (move to trash)
 async function deleteNoteByName(name) {
     const confirmed = await showModal({
-        title: 'Delete note',
-        message: `Are you sure you want to permanently delete the note "${name}"?`,
+        title: 'Move to Trash',
+        message: `Are you sure you want to move "${name}" to trash?`,
         type: 'confirm',
-        confirmText: 'Delete',
+        confirmText: 'Move to Trash',
         danger: true
     });
     
     if (!confirmed) return;
 
+    // Trigger slide-out animation on sidebar item
+    const sidebarItems = notesList.querySelectorAll('li');
+    for (const li of sidebarItems) {
+        if (li.querySelector('span')?.textContent === name) {
+            li.classList.add('item-removing');
+            break;
+        }
+    }
+    await new Promise(r => setTimeout(r, 220));
+
     try {
-        const response = await fetch(`/api/notes/${name}`, { method: 'DELETE' });
+        const response = await fetch(`/api/notes/${encodeURIComponent(name)}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Delete error');
         
         if (currentNote === name) {
@@ -507,10 +527,13 @@ async function deleteNoteByName(name) {
         }
         
         await loadNotes();
+        if (trashModal && !trashModal.classList.contains('hidden')) {
+            await loadTrash();
+        }
         broadcastSync();
     } catch (err) {
         console.error(err);
-        await showAlert('Error deleting note!');
+        await showAlert('Error moving note to trash!');
     }
 }
 
@@ -679,4 +702,147 @@ if (noteEditor && previewScroll) {
         const percentage = previewScroll.scrollTop / previewScrollable;
         noteEditor.scrollTop = percentage * (noteEditor.scrollHeight - noteEditor.clientHeight);
     });
+}
+
+// Trash Management Logic
+async function loadTrash() {
+    try {
+        const response = await fetch('/api/trash');
+        if (!response.ok) throw new Error('Failed to load trash');
+        const trashNotes = await response.json();
+        
+        trashList.innerHTML = '';
+        if (trashNotes.length === 0) {
+            trashEmptyState.style.display = 'flex';
+            emptyTrashBtn.style.display = 'none';
+        } else {
+            trashEmptyState.style.display = 'none';
+            emptyTrashBtn.style.display = 'inline-block';
+            
+            trashNotes.forEach(name => {
+                const li = document.createElement('li');
+                li.className = 'trash-item';
+                
+                const span = document.createElement('span');
+                span.className = 'trash-item-name';
+                span.textContent = name;
+                
+                const actionsDiv = document.createElement('div');
+                actionsDiv.className = 'trash-item-actions';
+                
+                const restoreBtn = document.createElement('button');
+                restoreBtn.className = 'icon-btn';
+                restoreBtn.title = 'Restore note';
+                restoreBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>`;
+                restoreBtn.addEventListener('click', () => restoreNoteFromTrash(name, li));
+                
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'icon-btn';
+                deleteBtn.title = 'Delete permanently';
+                deleteBtn.style.color = 'var(--danger-color)';
+                deleteBtn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>`;
+                deleteBtn.addEventListener('click', () => deleteNotePermanently(name, li));
+                
+                actionsDiv.appendChild(restoreBtn);
+                actionsDiv.appendChild(deleteBtn);
+                
+                li.appendChild(span);
+                li.appendChild(actionsDiv);
+                trashList.appendChild(li);
+            });
+        }
+    } catch (err) {
+        console.error('Error loading trash:', err);
+    }
+}
+
+async function restoreNoteFromTrash(name, liElement) {
+    if (liElement) {
+        liElement.classList.add('item-restoring');
+        await new Promise(r => setTimeout(r, 220));
+    }
+    try {
+        const response = await fetch(`/api/trash/${encodeURIComponent(name)}/restore`, { method: 'POST' });
+        if (!response.ok) throw new Error('Restore failed');
+        await loadTrash();
+        await loadNotes();
+        broadcastSync();
+    } catch (err) {
+        console.error(err);
+        await showAlert('Failed to restore note!');
+    }
+}
+
+async function deleteNotePermanently(name, liElement) {
+    const confirmed = await showModal({
+        title: 'Delete Permanently',
+        message: `Are you sure you want to permanently delete "${name}"? This action cannot be undone.`,
+        type: 'confirm',
+        confirmText: 'Delete Permanently',
+        danger: true
+    });
+    
+    if (!confirmed) return;
+    
+    if (liElement) {
+        liElement.classList.add('item-removing');
+        await new Promise(r => setTimeout(r, 220));
+    }
+    
+    try {
+        const response = await fetch(`/api/trash/${encodeURIComponent(name)}`, { method: 'DELETE' });
+        if (!response.ok) throw new Error('Permanent delete failed');
+        await loadTrash();
+        broadcastSync();
+    } catch (err) {
+        console.error(err);
+        await showAlert('Failed to delete note permanently!');
+    }
+}
+
+async function emptyTrash() {
+    const confirmed = await showModal({
+        title: 'Empty Trash',
+        message: 'Are you sure you want to empty the trash? All notes in the trash will be permanently deleted.',
+        type: 'confirm',
+        confirmText: 'Empty Trash',
+        danger: true
+    });
+    
+    if (!confirmed) return;
+    
+    try {
+        const response = await fetch('/api/trash', { method: 'DELETE' });
+        if (!response.ok) throw new Error('Empty trash failed');
+        await loadTrash();
+        broadcastSync();
+    } catch (err) {
+        console.error(err);
+        await showAlert('Failed to empty trash!');
+    }
+}
+
+if (trashBtn) {
+    trashBtn.addEventListener('click', () => {
+        trashModal.classList.remove('hidden');
+        loadTrash();
+    });
+}
+
+if (closeTrashBtn) {
+    closeTrashBtn.addEventListener('click', () => {
+        trashModal.classList.add('hidden');
+    });
+}
+
+if (trashModal) {
+    trashModal.addEventListener('click', (e) => {
+        if (e.target === trashModal) {
+            trashModal.classList.add('hidden');
+        }
+    });
+}
+
+if (emptyTrashBtn) {
+    emptyTrashBtn.addEventListener('click', emptyTrash);
 }
